@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maps</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="google-maps-style.css">
+</head>
+
+<body>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Google Maps Header -->
+    <header class="maps-header">
+        <div class="header-left">
+            <button class="menu-btn" id="menu-btn">
+                <span class="material-icons">menu</span>
+            </button>
+            <div class="logo-container">
+                <span class="material-icons maps-icon">map</span>
+                <span class="logo-text">Maps</span>
+            </div>
+        </div>
+
+        <!-- Google Maps Style Search -->
+        <div class="search-container" id="search-container">
+            <div class="search-box">
+                <span class="material-icons search-icon">search</span>
+                <input type="text" id="search-input" placeholder="Search Google Maps" class="search-input">
+                <button class="search-clear" id="search-clear" style="display: none;">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <!-- Search suggestions dropdown -->
+            <div class="search-suggestions" id="search-suggestions" style="display: none;"></div>
+        </div>
+
+        <div class="header-right">
+            <button class="header-btn" title="Your places">
+                <span class="material-icons">bookmark_border</span>
+            </button>
+            <button class="header-btn" title="Share or embed">
+                <span class="material-icons">share</span>
+            </button>
+            <div class="profile-btn">
+                <span class="material-icons">account_circle</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Side Panel (Hidden by default) -->
+    <div class="side-panel" id="side-panel">
+        <div class="panel-header">
+            <button class="panel-close" id="panel-close">
+                <span class="material-icons">close</span>
+            </button>
+            <h2 class="panel-title">Directions</h2>
+        </div>
+
+        <div class="panel-content">
+            <!-- Route Planning -->
+            <div class="route-planner">
+                <div class="transport-modes">
+                    <button class="transport-btn active" data-mode="driving">
+                        <span class="material-icons">directions_car</span>
+                    </button>
+                    <button class="transport-btn" data-mode="walking">
+                        <span class="material-icons">directions_walk</span>
+                    </button>
+                    <button class="transport-btn" data-mode="transit">
+                        <span class="material-icons">directions_transit</span>
+                    </button>
+                    <button class="transport-btn" data-mode="cycling">
+                        <span class="material-icons">directions_bike</span>
+                    </button>
+                </div>
+
+                <div class="route-inputs">
+                    <div class="input-container">
+                        <div class="route-dot start-dot"></div>
+                        <input type="text" id="start-input" placeholder="Choose starting point" class="route-input">
+                        <button class="input-action" id="my-location-btn" title="Your location">
+                            <span class="material-icons">my_location</span>
+                        </button>
+                    </div>
+
+                    <button class="swap-btn" id="swap-routes">
+                        <span class="material-icons">swap_vert</span>
+                    </button>
+
+                    <div class="input-container">
+                        <div class="route-dot end-dot"></div>
+                        <input type="text" id="end-input" placeholder="Choose destination" class="route-input">
+                        <button class="input-action" id="add-stop-btn" title="Add stop">
+                            <span class="material-icons">add</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="directions-btn" id="get-directions-btn">
+                    <span class="material-icons">directions</span>
+                    Directions
+                </button>
+            </div>
+
+            <!-- Route Results -->
+            <div class="route-results" id="route-results" style="display: none;">
+                <div class="route-summary">
+                    <div class="route-time">25 min</div>
+                    <div class="route-distance">8.2 km</div>
+                    <div class="route-via">via Main St</div>
+                </div>
+
+                <button class="start-navigation-btn" id="start-nav-btn">
+                    <span class="material-icons">navigation</span>
+                    Start
+                </button>
+
+                <div class="route-steps" id="route-steps">
+                    <!-- Steps will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map" class="map-container"></div>
+
+    <!-- Bottom Controls -->
+    <div class="bottom-controls">
+        <!-- Zoom Controls -->
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoom-in">
+                <span class="material-icons">add</span>
+            </button>
+            <button class="zoom-btn" id="zoom-out">
+                <span class="material-icons">remove</span>
+            </button>
+        </div>
+
+        <!-- Map Type Controls -->
+        <div class="map-type-controls">
+            <button class="map-type-btn" id="layers-btn">
+                <span class="map-type-icon">
+                    <span class="material-icons">layers</span>
+                </span>
+                <span class="map-type-text">Layers</span>
+            </button>
+        </div>
+
+        <!-- My Location Button -->
+        <button class="my-location-btn" id="locate-btn">
+            <span class="material-icons">my_location</span>
+        </button>
+    </div>
+
+    <!-- Layers Panel -->
+    <div class="layers-panel" id="layers-panel" style="display: none;">
+        <div class="layers-header">
+            <h3>Map details</h3>
+            <button class="layers-close" id="layers-close">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="layers-content">
+            <div class="layer-group">
+                <h4>Map type</h4>
+                <div class="layer-options">
+                    <button class="layer-option active" data-layer="roadmap">
+                        <div class="layer-preview roadmap-preview"></div>
+                        <span>Default</span>
+                    </button>
+                    <button class="layer-option" data-layer="satellite">
+                        <div class="layer-preview satellite-preview"></div>
+                        <span>Satellite</span>
+                    </button>
+                    <button class="layer-option" data-layer="terrain">
+                        <div class="layer-preview terrain-preview"></div>
+                        <span>Terrain</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="layer-group">
+                <h4>Details</h4>
+                <div class="layer-toggles">
+                    <label class="layer-toggle">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                        <span>Traffic</span>
+                    </label>
+                    <label class="layer-toggle">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                        <span>Transit</span>
+                    </label>
+                    <label class="layer-toggle">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                        <span>Biking</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Mode UI -->
+    <div class="navigation-ui" id="navigation-ui" style="display: none;">
+        <div class="nav-header">
+            <button class="nav-close" id="nav-close">
+                <span class="material-icons">close</span>
+            </button>
+            <div class="nav-info">
+                <div class="nav-time">25 min</div>
+                <div class="nav-distance">8.2 km remaining</div>
+            </div>
+            <button class="nav-menu" id="nav-menu">
+                <span class="material-icons">more_vert</span>
+            </button>
+        </div>
+
+        <div class="nav-instruction">
+            <div class="instruction-icon">
+                <span class="material-icons">turn_right</span>
+            </div>
+            <div class="instruction-text">
+                <div class="instruction-main">Turn right onto Main Street</div>
+                <div class="instruction-distance">in 200 m</div>
+            </div>
+        </div>
+
+        <div class="nav-controls">
+            <button class="nav-control-btn" id="nav-sound-btn">
+                <span class="material-icons">volume_up</span>
+            </button>
+            <button class="nav-control-btn" id="nav-overview-btn">
+                <span class="material-icons">map</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="routing.js"></script>
+    <script src="navigation.js"></script>
+    <script src="google-maps-app.js"></script>
+</body>
+
+</html>

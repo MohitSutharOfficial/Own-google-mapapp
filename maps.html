@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maps</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="google-maps-style.css">
+    <link rel="stylesheet" href="google-maps-extra.css">
+    <link rel="stylesheet" href="google-maps-comprehensive.css">
+    <link rel="stylesheet" href="enterprise-features.css">
+</head>
+
+<body>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Google Maps Header -->
+    <header class="maps-header">
+        <div class="header-left">
+            <button class="menu-btn" id="menu-btn">
+                <span class="material-icons">menu</span>
+            </button>
+            <div class="logo-container">
+                <span class="material-icons maps-icon">map</span>
+                <span class="logo-text">Maps</span>
+            </div>
+        </div>
+
+        <!-- Google Maps Style Search -->
+        <div class="search-container" id="search-container">
+            <div class="search-box">
+                <span class="material-icons search-icon">search</span>
+                <input type="text" id="search-input" placeholder="Search Google Maps" class="search-input">
+                <button class="search-clear" id="search-clear" style="display: none;">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <!-- Search suggestions dropdown -->
+            <div class="search-suggestions" id="search-suggestions" style="display: none;"></div>
+        </div>
+
+        <div class="header-right">
+            <button class="header-btn" id="analytics-btn" title="Analytics Dashboard" data-permission="analytics">
+                <span class="material-icons">analytics</span>
+            </button>
+            <button class="header-btn" id="collaboration-btn" title="Team Collaboration">
+                <span class="material-icons">people</span>
+            </button>
+            <button class="header-btn" title="Your places">
+                <span class="material-icons">bookmark_border</span>
+            </button>
+            <button class="header-btn" title="Share or embed">
+                <span class="material-icons">share</span>
+            </button>
+            <button class="header-btn" id="login-btn" title="Login">
+                <span class="material-icons">account_circle</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Side Panel -->
+    <div class="side-panel" id="side-panel">
+        <div class="panel-header">
+            <div class="panel-title">Explore</div>
+            <div class="panel-subtitle">Discover places and save favorites</div>
+        </div>
+        <div class="panel-content">
+            <div class="panel-section">
+                <h4>Your places</h4>
+                <div class="place-list">
+                    <div class="place-item">
+                        <span class="material-icons">home</span>
+                        <span>Home</span>
+                    </div>
+                    <div class="place-item">
+                        <span class="material-icons">work</span>
+                        <span>Work</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Directions Panel -->
+    <div class="directions-panel" id="directions-panel">
+        <div class="directions-header">
+            <div class="directions-title">Directions</div>
+            <button class="header-btn" id="close-directions">
+                <span class="material-icons">close</span>
+            </button>
+
+            <div class="directions-inputs">
+                <div class="direction-input-group">
+                    <div class="direction-marker start"></div>
+                    <input type="text" class="direction-input" id="origin-input" placeholder="Choose starting point">
+                </div>
+                <div class="direction-input-group">
+                    <div class="direction-marker end"></div>
+                    <input type="text" class="direction-input" id="destination-input" placeholder="Choose destination">
+                    <button class="direction-swap" id="swap-directions">
+                        <span class="material-icons">swap_vert</span>
+                    </button>
+                </div>
+            </div>
+
+            <button class="get-directions-btn" id="get-directions">Get Directions</button>
+        </div>
+
+        <div class="route-options">
+            <div class="route-mode active" data-mode="driving">
+                <span class="material-icons route-mode-icon">directions_car</span>
+                <span class="route-mode-text">Driving</span>
+            </div>
+            <div class="route-mode" data-mode="walking">
+                <span class="material-icons route-mode-icon">directions_walk</span>
+                <span class="route-mode-text">Walking</span>
+            </div>
+            <div class="route-mode" data-mode="cycling">
+                <span class="material-icons route-mode-icon">directions_bike</span>
+                <span class="route-mode-text">Cycling</span>
+            </div>
+            <div class="route-mode" data-mode="transit">
+                <span class="material-icons route-mode-icon">directions_transit</span>
+                <span class="route-mode-text">Transit</span>
+            </div>
+        </div>
+
+        <div class="route-summary" id="route-summary" style="display: none;">
+            <div class="route-info">
+                <div class="route-distance" id="route-distance">12.5 km</div>
+                <div class="route-duration" id="route-duration">25 min</div>
+            </div>
+            <button class="start-navigation-btn" id="start-navigation" style="display: none;">Start</button>
+        </div>
+
+        <div class="route-steps" id="route-steps"></div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="bottom-controls">
+        <button class="control-btn" id="directions-btn" title="Directions">
+            <span class="material-icons">directions</span>
+        </button>
+        <button class="control-btn" id="my-location-btn" title="Your location">
+            <span class="material-icons">my_location</span>
+        </button>
+        <button class="control-btn" id="layers-btn" title="Layers">
+            <span class="material-icons">layers</span>
+        </button>
+    </div>
+
+    <!-- Layer Control -->
+    <div class="layer-control" id="layer-control">
+        <div class="layer-option active" data-layer="standard">
+            <span class="material-icons layer-icon">map</span>
+            <span class="layer-text">Map</span>
+        </div>
+        <div class="layer-option" data-layer="satellite">
+            <span class="material-icons layer-icon">satellite_alt</span>
+            <span class="layer-text">Satellite</span>
+        </div>
+        <div class="layer-option" data-layer="terrain">
+            <span class="material-icons layer-icon">terrain</span>
+            <span class="layer-text">Terrain</span>
+        </div>
+        <div class="layer-option" data-layer="transit">
+            <span class="material-icons layer-icon">train</span>
+            <span class="layer-text">Transit</span>
+        </div>
+    </div>
+
+    <!-- Navigation UI -->
+    <div class="navigation-ui" id="navigation-ui">
+        <div class="nav-info">
+            <div class="nav-distance" id="nav-distance">2.5 km</div>
+            <div class="nav-eta" id="nav-eta">ETA 3:45 PM</div>
+        </div>
+        <div class="nav-instruction" id="nav-instruction">Turn right onto Main Street</div>
+        <div class="nav-street" id="nav-street">Continue for 500m</div>
+        <div class="nav-controls">
+            <button class="nav-btn" id="nav-overview">Overview</button>
+            <button class="nav-btn" id="stop-navigation">Stop</button>
+        </div>
+    </div>
+
+    <!-- Street View Panel -->
+    <div class="street-view-panel" id="street-view-panel">
+        <div class="street-view-header">
+            <div class="street-view-title">Street View</div>
+            <button class="header-btn" id="close-street-view">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="street-view-container">
+            <div id="street-view" class="street-view-canvas"></div>
+            <div class="street-view-controls">
+                <button class="street-view-btn" id="street-view-fullscreen">
+                    <span class="material-icons">fullscreen</span>
+                </button>
+                <button class="street-view-btn" id="street-view-share">
+                    <span class="material-icons">share</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Traffic Panel -->
+    <div class="traffic-panel" id="traffic-panel">
+        <div class="panel-header">
+            <div class="panel-title">Traffic Information</div>
+            <button class="header-btn" id="close-traffic">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="traffic-legend">
+            <div class="traffic-item">
+                <div class="traffic-color traffic-green"></div>
+                <span>Light traffic</span>
+            </div>
+            <div class="traffic-item">
+                <div class="traffic-color traffic-yellow"></div>
+                <span>Moderate traffic</span>
+            </div>
+            <div class="traffic-item">
+                <div class="traffic-color traffic-red"></div>
+                <span>Heavy traffic</span>
+            </div>
+            <div class="traffic-item">
+                <div class="traffic-color traffic-dark-red"></div>
+                <span>Standstill traffic</span>
+            </div>
+        </div>
+        <div class="traffic-incidents" id="traffic-incidents">
+            <h4>Current Incidents</h4>
+            <div class="incident-list" id="incident-list"></div>
+        </div>
+    </div>
+
+    <!-- Saved Places Panel -->
+    <div class="saved-places-panel" id="saved-places-panel">
+        <div class="panel-header">
+            <div class="panel-title">Your Places</div>
+            <button class="header-btn" id="close-saved-places">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="saved-places-content">
+            <div class="place-categories">
+                <button class="category-btn active" data-category="favorites">
+                    <span class="material-icons">star</span>
+                    <span>Favorites</span>
+                </button>
+                <button class="category-btn" data-category="recent">
+                    <span class="material-icons">history</span>
+                    <span>Recent</span>
+                </button>
+                <button class="category-btn" data-category="home-work">
+                    <span class="material-icons">home</span>
+                    <span>Home & Work</span>
+                </button>
+            </div>
+            <div class="places-list" id="places-list"></div>
+            <button class="add-place-btn" id="add-place-btn">
+                <span class="material-icons">add</span>
+                <span>Add a place</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Nearby Places Panel -->
+    <div class="nearby-panel" id="nearby-panel">
+        <div class="panel-header">
+            <div class="panel-title">Nearby Places</div>
+            <button class="header-btn" id="close-nearby">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="nearby-categories">
+            <button class="nearby-category" data-category="restaurant">
+                <span class="material-icons">restaurant</span>
+                <span>Restaurants</span>
+            </button>
+            <button class="nearby-category" data-category="gas_station">
+                <span class="material-icons">local_gas_station</span>
+                <span>Gas Stations</span>
+            </button>
+            <button class="nearby-category" data-category="atm">
+                <span class="material-icons">local_atm</span>
+                <span>ATMs</span>
+            </button>
+            <button class="nearby-category" data-category="hospital">
+                <span class="material-icons">local_hospital</span>
+                <span>Hospitals</span>
+            </button>
+            <button class="nearby-category" data-category="shopping_mall">
+                <span class="material-icons">shopping_cart</span>
+                <span>Shopping</span>
+            </button>
+            <button class="nearby-category" data-category="hotel">
+                <span class="material-icons">hotel</span>
+                <span>Hotels</span>
+            </button>
+        </div>
+        <div class="nearby-results" id="nearby-results"></div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settings-panel">
+        <div class="panel-header">
+            <div class="panel-title">Settings</div>
+            <button class="header-btn" id="close-settings">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="settings-content">
+            <div class="settings-section">
+                <h4>Navigation</h4>
+                <div class="setting-item">
+                    <label class="setting-toggle">
+                        <input type="checkbox" id="voice-navigation" checked>
+                        <span class="toggle-slider"></span>
+                        <span>Voice navigation</span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label class="setting-toggle">
+                        <input type="checkbox" id="avoid-tolls">
+                        <span class="toggle-slider"></span>
+                        <span>Avoid tolls</span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label class="setting-toggle">
+                        <input type="checkbox" id="avoid-highways">
+                        <span class="toggle-slider"></span>
+                        <span>Avoid highways</span>
+                    </label>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h4>Map Display</h4>
+                <div class="setting-item">
+                    <label class="setting-toggle">
+                        <input type="checkbox" id="show-traffic" checked>
+                        <span class="toggle-slider"></span>
+                        <span>Show traffic</span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label class="setting-toggle">
+                        <input type="checkbox" id="show-labels" checked>
+                        <span class="toggle-slider"></span>
+                        <span>Show labels</span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label for="distance-unit">Distance unit:</label>
+                    <select id="distance-unit" class="setting-select">
+                        <option value="metric">Kilometers</option>
+                        <option value="imperial">Miles</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="context-menu" style="display: none;">
+        <div class="context-item" id="directions-from-here">
+            <span class="material-icons">directions</span>
+            <span>Directions from here</span>
+        </div>
+        <div class="context-item" id="directions-to-here">
+            <span class="material-icons">place</span>
+            <span>Directions to here</span>
+        </div>
+        <div class="context-item" id="whats-here">
+            <span class="material-icons">info</span>
+            <span>What's here?</span>
+        </div>
+        <div class="context-item" id="add-missing-place">
+            <span class="material-icons">add_location</span>
+            <span>Add a missing place</span>
+        </div>
+        <div class="context-item" id="measure-distance">
+            <span class="material-icons">straighten</span>
+            <span>Measure distance</span>
+        </div>
+        <div class="context-item" id="street-view-here">
+            <span class="material-icons">streetview</span>
+            <span>Street View</span>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Share Modal -->
+    <div class="modal-overlay" id="share-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Share this map</h3>
+                <button class="modal-close" id="close-share-modal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="share-options">
+                    <button class="share-option" id="share-link">
+                        <span class="material-icons">link</span>
+                        <span>Copy link</span>
+                    </button>
+                    <button class="share-option" id="share-email">
+                        <span class="material-icons">email</span>
+                        <span>Email</span>
+                    </button>
+                    <button class="share-option" id="share-embed">
+                        <span class="material-icons">code</span>
+                        <span>Embed map</span>
+                    </button>
+                </div>
+                <div class="share-url">
+                    <input type="text" id="share-url-input" readonly>
+                    <button class="copy-btn" id="copy-url">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Measurement Tool -->
+    <div class="measurement-tool" id="measurement-tool" style="display: none;">
+        <div class="measurement-header">
+            <span>Measuring distance</span>
+            <button class="measurement-close" id="close-measurement">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="measurement-info">
+            <div class="measurement-distance" id="measurement-distance">0 km</div>
+            <div class="measurement-instruction">Click on the map to measure distance</div>
+        </div>
+    </div>
+
+    <!-- Additional Controls -->
+    <div class="extra-controls">
+        <button class="control-btn" id="traffic-btn" title="Traffic">
+            <span class="material-icons">traffic</span>
+        </button>
+        <button class="control-btn" id="nearby-btn" title="Nearby places">
+            <span class="material-icons">place</span>
+        </button>
+        <button class="control-btn" id="street-view-btn" title="Street View">
+            <span class="material-icons">streetview</span>
+        </button>
+        <button class="control-btn" id="settings-btn" title="Settings">
+            <span class="material-icons">settings</span>
+        </button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="google-maps-app.js"></script>
+    <script src="google-maps-extended.js"></script>
+    <script src="enterprise-maps.js"></script>
+    <script src="auth-system.js"></script>
+    <script src="advanced-analytics.js"></script>
+    <script src="collaboration-system.js"></script>
+
+    <script>
+        // Initialize enterprise features
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize authentication
+            if (window.authSystem) {
+                // Show login if no user is logged in
+                if (!window.authSystem.currentUser) {
+                    document.getElementById('login-btn').addEventListener('click', () => {
+                        window.authSystem.showAuthModal();
+                    });
+                }
+            }
+
+            // Initialize analytics dashboard
+            if (window.advancedAnalytics) {
+                document.getElementById('analytics-btn').addEventListener('click', () => {
+                    window.advancedAnalytics.show();
+                });
+            }
+
+            // Initialize collaboration
+            if (window.collaboration) {
+                document.getElementById('collaboration-btn').addEventListener('click', () => {
+                    window.collaboration.show();
+                });
+            }
+
+            // Initialize enterprise maps if available
+            if (typeof EnterpriseGoogleMaps !== 'undefined') {
+                window.enterpriseMaps = new EnterpriseGoogleMaps();
+            }
+        });
+    </script>
+</body>
+
+</html>

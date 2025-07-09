@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FindMyMap - Modern Navigation</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="mobile.css">
+    <link rel="stylesheet" href="simple-modern.css">
+    <style>
+        /* Immediate modern styles to override any conflicts */
+        .modern-search-container {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            right: 24px;
+            z-index: 1050;
+            max-width: 448px;
+        }
+
+        .search-card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .floating-menu-btn {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 50%;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1050;
+        }
+
+        .floating-actions {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 1000;
+        }
+
+        .fab-btn {
+            width: 56px;
+            height: 56px;
+            background: #3b82f6;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modern-sidebar {
+            height: 100vh;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        #controls-sidebar {
+            background: white !important;
+            padding: 0 !important;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Modern floating search bar -->
+    <div class="modern-search-container">
+        <div class="search-card">
+            <div class="search-input-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="search-input" class="modern-search-input" placeholder="Where to?">
+                <button id="search-clear" class="search-clear-btn"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modern floating menu button -->
+    <div class="floating-menu-btn" id="mobile-toggle">
+        <i class="fas fa-layer-group"></i>
+    </div>
+
+    <!-- Modern floating action buttons -->
+    <div class="floating-actions">
+        <button class="fab-btn" id="locate-fab" title="Find My Location">
+            <i class="fas fa-location-arrow"></i>
+        </button>
+        <button class="fab-btn" id="layers-fab" title="Map Layers">
+            <i class="fas fa-layer-group"></i>
+        </button>
+    </div>
+
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Overlay for mobile sidebar -->
+            <div class="sidebar-overlay" id="sidebar-overlay"></div>
+            <!-- Modern sidebar -->
+            <div class="col-md-3 bg-light" id="controls-sidebar">
+                <div class="modern-sidebar">
+                    <div class="sidebar-header">
+                        <div class="app-logo">
+                            <i class="fas fa-map-marked-alt"></i>
+                            <span>FindMyMap</span>
+                        </div>
+                        <button id="close-sidebar" class="close-btn d-md-none">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="sidebar-content">
+                        <!-- Quick Actions Section -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                <i class="fas fa-bolt"></i>
+                                Quick Actions
+                            </div>
+                            <div class="action-grid">
+                                <button id="locate-btn" class="action-btn primary">
+                                    <i class="fas fa-location-arrow"></i>
+                                    <span>My Location</span>
+                                </button>
+                                <button id="reset-btn" class="action-btn secondary">
+                                    <i class="fas fa-refresh"></i>
+                                    <span>Reset Map</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Distance Calculator Section -->
+                        <div class="section-card" id="distance-controls">
+                            <div class="section-title">
+                                <i class="fas fa-route"></i>
+                                Route Planner
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">From</label>
+                                <select id="point-a-select" class="modern-select">
+                                    <option value="">Choose starting point</option>
+                                    <option value="user">My Current Location</option>
+                                    <option value="search">Search Result</option>
+                                    <option value="custom">Custom Point on Map</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">To</label>
+                                <select id="point-b-select" class="modern-select">
+                                    <option value="">Choose destination</option>
+                                    <option value="user">My Current Location</option>
+                                    <option value="search">Search Result</option>
+                                    <option value="custom">Custom Point on Map</option>
+                                </select>
+                            </div>
+
+                            <div class="button-group">
+                                <button id="calculate-distance-btn" class="modern-btn accent">
+                                    <i class="fas fa-calculator"></i>
+                                    Calculate Route
+                                </button>
+                                <button id="start-navigation-btn" class="modern-btn primary">
+                                    <i class="fas fa-directions"></i>
+                                    Start Navigation
+                                </button>
+                            </div>
+
+                            <div id="distance-result" class="result-card" style="display: none;"></div>
+                        </div>
+
+                        <!-- Navigation Controls -->
+                        <div class="section-card" id="navigation-controls" style="display: none;">
+                            <div class="section-title">
+                                <i class="fas fa-navigation"></i>
+                                Live Navigation
+                            </div>
+                            <div id="navigation-info" class="nav-info-card"></div>
+                            <div class="button-group">
+                                <button id="voice-guidance-btn" class="modern-btn primary">
+                                    <i class="fas fa-volume-up"></i>
+                                    Voice Guidance
+                                </button>
+                                <button id="stop-navigation-btn" class="modern-btn danger">
+                                    <i class="fas fa-stop"></i>
+                                    Stop Navigation
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Map container -->
+            <div class="col-md-9 p-0">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Add mobile toggle script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile sidebar toggle functionality
+            const mobileToggle = document.getElementById('mobile-toggle');
+            const controlsSidebar = document.getElementById('controls-sidebar');
+            const closeSidebar = document.getElementById('close-sidebar');
+            const mapElement = document.getElementById('map');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+            function toggleSidebar(show) {
+                if (show === undefined) {
+                    controlsSidebar.classList.toggle('active');
+                    sidebarOverlay.style.display = controlsSidebar.classList.contains('active') ? 'block' : 'none';
+                } else if (show) {
+                    controlsSidebar.classList.add('active');
+                    sidebarOverlay.style.display = 'block';
+                } else {
+                    controlsSidebar.classList.remove('active');
+                    sidebarOverlay.style.display = 'none';
+                }
+            }
+
+            if (mobileToggle && controlsSidebar) {
+                mobileToggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    toggleSidebar();
+                });
+            }
+
+            if (closeSidebar && controlsSidebar) {
+                closeSidebar.addEventListener('click', function () {
+                    toggleSidebar(false);
+                });
+            }
+
+            // Close sidebar when clicking on map
+            if (mapElement && controlsSidebar) {
+                mapElement.addEventListener('click', function () {
+                    if (window.innerWidth <= 768 && controlsSidebar.classList.contains('active')) {
+                        toggleSidebar(false);
+                    }
+                });
+            }
+
+            // Close sidebar when clicking on overlay
+            if (sidebarOverlay && controlsSidebar) {
+                sidebarOverlay.addEventListener('click', function () {
+                    toggleSidebar(false);
+                });
+            }
+
+            // Add CSS for toast notifications
+            const style = document.createElement('style');
+            style.textContent = `
+                .toast-notification {
+                    position: fixed;
+                    bottom: 24px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: rgba(50, 50, 50, 0.9);
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    z-index: 2000;
+                    display: flex;
+                    align-items: center;
+                    min-width: 200px;
+                    max-width: 80%;
+                }
+                
+                .toast-icon {
+                    margin-right: 12px;
+                }
+                
+                .toast-success .toast-icon {
+                    color: #0F9D58;
+                }
+                
+                .toast-error .toast-icon {
+                    color: #DB4437;
+                }
+                
+                .toast-info .toast-icon {
+                    color: #4285F4;
+                }
+                
+                .toast-warning .toast-icon {
+                    color: #F4B400;
+                }
+                
+                @keyframes slide-in {
+                    from { transform: translate(-50%, 100%); opacity: 0; }
+                    to { transform: translate(-50%, 0); opacity: 1; }
+                }
+                
+                @keyframes slide-out {
+                    from { transform: translate(-50%, 0); opacity: 1; }
+                    to { transform: translate(-50%, 100%); opacity: 0; }
+                }
+                
+                .slide-in {
+                    animation: slide-in 0.3s ease forwards;
+                }
+                
+                .slide-out {
+                    animation: slide-out 0.3s ease forwards;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="routing.js"></script>
+    <script src="navigation.js"></script>
+    <script src="script.js"></script>
+    <script src="mobile.js"></script>
+    <script src="direction-indicators.js"></script>
+
+</body>
+
+</html>
